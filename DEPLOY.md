@@ -3,14 +3,17 @@
 Tujuan: URL publik yang tetap hidup **tanpa PC dan tanpa proses tunnel**.
 
 Aplikasi ini memakai SQLite (`node:sqlite`) dan menyimpan lampiran di disk, jadi
-hosting-nya harus:
+hosting produksinya idealnya:
 
 1. menjalankan container/Node terus-menerus, dan
 2. punya **volume persisten** yang di-mount ke `DATA_DIR` (default `/app/data`).
 
-Karena itu aplikasi ini **belum cocok di-deploy apa adanya ke Vercel** (filesystem
-serverless tidak persisten). Vercel bisa dipakai, tetapi database harus dimigrasikan
-ke PostgreSQL/Supabase lebih dulu (pekerjaan terpisah, lihat `README.md` bagian 15).
+**Vercel:** sejak perbaikan kompatibilitas, demo dapat berjalan di Vercel karena
+`DATA_DIR` otomatis dialihkan ke `/tmp/ruangidb` (satu-satunya filesystem yang
+dapat ditulis). Konsekuensinya data **ephemeral**: database di-seed ulang saat
+instance baru dibuat dan pengajuan dapat hilang saat cold start. Untuk data
+permanen, migrasikan database ke PostgreSQL/Supabase (lihat `README.md` bagian 15)
+dan lampiran ke Supabase Storage/Vercel Blob.
 
 ## Environment yang wajib
 
@@ -102,6 +105,19 @@ Volume `ruangidb_data` menyimpan database dan lampiran.
 ---
 
 ## Opsi E — Vercel + Supabase/Neon (serverless)
+
+**Demo tanpa migrasi:** aplikasi sekarang memakai `/tmp/ruangidb` saat mendeteksi
+`VERCEL=1`, sehingga tidak lagi 500 karena filesystem read-only. Set environment
+variable berikut di Vercel → Project Settings → Environment Variables:
+
+| Variabel | Nilai |
+|---|---|
+| `AUTH_SECRET` | string acak panjang (disarankan; tanpa ini dipakai secret demo sementara) |
+| `APP_URL` | `https://tugasweb0034.vercel.app` |
+| `COOKIE_SECURE` | `true` |
+
+Data demo tetap **ephemeral** (hilang saat cold start/instance baru). Untuk data
+permanen, lanjutkan migrasi berikut:
 
 Perlu migrasi:
 

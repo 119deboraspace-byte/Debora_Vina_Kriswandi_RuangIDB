@@ -1,9 +1,12 @@
 ﻿import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { execute, queryAll, queryOne } from "./db";
 import { verifyPassword } from "./password";
+import { DATA_DIR } from "./paths";
 import type { Role } from "./rbac";
 import { nowIso } from "./time";
 
@@ -12,15 +15,48 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8;
 const LOGIN_WINDOW_MINUTES = 15;
 const MAX_FAILED_ATTEMPTS = 8;
 
+let runtimeSecret: string | null = null;
+
+/**
+ * Vercel tidak menyediakan filesystem persisten. Untuk demo, bila AUTH_SECRET
+ * belum diatur, buat secret acak di DATA_DIR (per instance) agar login tidak
+ * 500. Produksi tetap wajib memakai AUTH_SECRET dari environment.
+ */
+function demoRuntimeSecret(): string {
+  if (runtimeSecret) return runtimeSecret;
+  const file = path.join(DATA_DIR, ".auth-secret");
+  try {
+    const existing = fs.readFileSync(file, "utf8").trim();
+    if (existing.length >= 32) {
+      runtimeSecret = existing;
+      return existing;
+    }
+  } catch {
+    // belum ada; buat baru
+  }
+  const generated = randomBytes(48).toString("base64url");
+  try {
+    fs.writeFileSync(file, generated, { mode: 0o600 });
+  } catch {
+    // tetap pakai secret di memori bila file tidak dapat ditulis
+  }
+  runtimeSecret = generated;
+  return generated;
+}
+
 function secret(): string {
   const value = process.env.AUTH_SECRET;
-  if (!value) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("AUTH_SECRET wajib diatur di lingkungan produksi.");
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") {
+    if (process.env.VERCEL === "1") {
+      console.warn(
+        "[RuangIDB] AUTH_SECRET belum diatur di Vercel; memakai secret demo sementara. Set AUTH_SECRET untuk produksi.",
+      );
+      return demoRuntimeSecret();
     }
-    return "ruangidb-dev-secret-change-me";
+    throw new Error("AUTH_SECRET wajib diatur di lingkungan produksi.");
   }
-  return value;
+  return "ruangidb-dev-secret-change-me";
 }
 
 interface UserRow {
