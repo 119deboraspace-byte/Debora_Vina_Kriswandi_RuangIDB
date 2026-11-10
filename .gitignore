@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Local SQLite database & uploaded files
+data/*.db
+data/*.db-*
+data/uploads/
+
+# Environment variables (keep the example file)
+.env
+.env.*
+!.env.example
+
+# Logs & OS files
+*.log
+.DS_Store
+
+# Generated TypeScript files
+next-env.d.ts
+*.tsbuildinfo

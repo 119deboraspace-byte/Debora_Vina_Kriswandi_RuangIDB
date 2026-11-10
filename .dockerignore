@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+data
+.env.local
+.env
+*.log
+.git
+docs/screenshots
+README.md
+PREVIEW.md

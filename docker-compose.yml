@@ -1,0 +1,16 @@
+services:
+  ruangidb:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-ganti-dengan-secret-panjang}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      DATA_DIR: /app/data
+    volumes:
+      - ruangidb_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  ruangidb_data:

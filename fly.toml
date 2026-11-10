@@ -1,0 +1,21 @@
+app = "ruangidb-idb"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DATA_DIR = "/app/data"
+  COOKIE_SECURE = "true"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[mounts]]
+  source = "ruangidb_data"
+  destination = "/app/data"
